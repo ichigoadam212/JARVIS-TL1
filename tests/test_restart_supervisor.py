@@ -1,6 +1,6 @@
 import pytest
 
-from jarvis.core.guardian import RestartSupervisor
+from jarvis.core.restart_supervisor import RestartSupervisor
 
 
 def test_restart_supervisor_allows_first_attempt_and_applies_backoff():
