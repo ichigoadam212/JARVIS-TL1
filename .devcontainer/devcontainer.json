@@ -10,8 +10,8 @@
     },
     "ghcr.io/devcontainers/features/java:1": {
       "version": "17",
-      "installMaven": "false",
-      "installGradle": "false"
+      "installMaven": false,
+      "installGradle": false
     }
   },
   "customizations": {
