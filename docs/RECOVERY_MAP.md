@@ -1,13 +1,13 @@
 # TL1 Recovery and Porting Map
 
-> This document is the source-of-truth inventory for recovering the earlier TL1 work into this repository. It deliberately separates verified source code from conversation-only notes and newly created scaffolding.
+> Source-of-truth inventory for recovering earlier TL1 work into this repository. This separates verified source code from conversation-only notes and newly created scaffolding.
 
 ## Repository boundaries
 
 - Target repository: `ichigoadam212/JARVIS-TL1`
-- Current integration branch: `work/tl1-dev-environment`
+- Integration branch: `work/tl1-dev-environment`
 - Android source repository: `ichigoadam212/Jarve-Android-V1`
-- Android source snapshot verified during recovery: `2c69843afb44501e72dd454b0f2f629f56c41359`
+- Android source snapshot inspected: `2c69843afb44501e72dd454b0f2f629f56c41359`
 - The Android repository is a source reference, not a replacement for the Linux TL1 runtime.
 - Do not merge the development branch into `main` until recovered components are mapped, ported, and tested.
 
@@ -39,62 +39,66 @@ TL1/
 └── Updates/
 ```
 
-The original Linux environment was Debian 13 (trixie), aarch64, Python 3.13.5, running as the unprivileged `jarvis` user in Andronix/PRoot. The historical working path was `/home/jarvis/TL1`.
+Original environment: Debian 13 (trixie), aarch64, Python 3.13.5, unprivileged `jarvis` user in Andronix/PRoot. Historical path: `/home/jarvis/TL1`.
 
 ## Recovery inventory
 
-| Component | Historical evidence | Git/source status | Integration decision |
+| Component | Historical evidence | Source status | Decision |
 |---|---|---|---|
-| Core Kernel | `Core/kernel.py`; reported system identity and component status | File name and observed output are in conversation history; original source body is not currently available in this repository | Recover original file before rewriting; then port/adapt with tests |
-| Core Logger | `Core/logger.py`; log included `TL1 Core initialized` | Historical behavior observed; exact source body unavailable | Preserve behavior and log format when source is recovered |
-| Core Status | `Core/status.py`; JSON status output | Historical behavior observed; exact source body unavailable | Recover output schema before implementing |
-| Config | `Config/system.conf` | File name is known; exact contents unavailable | Never invent old settings; create a documented example only after schema is confirmed |
-| Logs | `Logs/system.log` | Runtime output was observed; log file itself is not committed here | Treat as generated data, never commit personal/runtime logs |
-| Command Engine | Earlier Android V1 has `core/CommandEngine.kt`; Linux TL1 command work also recorded | Android source exists; Linux original implementation is not yet located | Keep platform-neutral command contracts; port only after inspecting both implementations |
-| Guardian | Android V1 Guardian files exist; TL1 Linux monitor v0.1 was tested for two cycles but watched itself | Android source exists; Linux monitor behavior is conversation-recorded, not source-verified | Keep Android Guardian and Linux process monitor separate; do not claim process supervision from an in-process health check |
-| Recovery | Planned Linux module; Android Guardian V3 work is separately recorded | No verified Linux recovery source in this repository | Implement only after defining safe recovery boundaries and tests |
-| Android Bridge | Planned as an authenticated bridge between Linux and Android | No verified bridge source found | Design protocol and trust boundary before implementation |
-| Voice | Android V1 speech/wake-word modules exist | Android source exists; no verified Linux voice source | Reuse concepts, not Android APIs |
-| FRIDAY | Study, analysis, and memory submodules were planned | No verified source body located | Preserve separate identity and data boundary from general JARVIS |
-| Memory | Persistent memory planned | No verified Linux source located | Define storage format, retention, and privacy before coding |
-| Security / Owner Protection | Owner-only protected settings planned; Android policies exist | Android policy source can be inspected; Linux authentication not verified | Never trust a user-supplied owner flag; implement authentication before privileged actions |
-| Tools | Directory exists in historical tree | No verified module inventory | Add tools only with explicit allowlists and least privilege |
-| Updates | Directory exists in historical tree | No verified updater implementation | Require signed/verified update design before enabling updates |
-| Dashboard / Control Center | Cyber identity, hybrid navigation, balanced information density were design decisions | Design notes only | Build after stable APIs and state model exist |
+| Core Kernel | `Core/kernel.py`; reported Linux identity and component status | Name and observed output are in conversation history; original source body is not in the Git repositories inspected so far | Recover original file before rewriting |
+| Core Logger | `Core/logger.py`; log included `TL1 Core initialized` | Historical behavior observed; exact Linux source body unavailable | Preserve behavior and log format when recovered |
+| Core Status | `Core/status.py`; JSON status output | Historical behavior observed; exact Linux source body unavailable | Recover output schema before implementing |
+| Config | `Config/system.conf` | File name known; exact contents unavailable | Do not invent old settings |
+| Logs | `Logs/system.log` | Runtime output observed; log file not committed | Generated data; do not commit runtime logs |
+| Linux Command Engine | Linux TL1 work recorded for `status` and `exit` | Exact Linux source body not yet located | Compare with current Python scaffold before porting |
+| Android Command Engine | `core/CommandEngine.kt` | Full source inspected at pinned Android snapshot | Keep as Android implementation; port behavior only where appropriate |
+| Linux Guardian v0.1 | Two monitor cycles were reported; monitor watched itself, not an external JARVIS process | Conversation evidence only; exact source body unavailable | Rebuild only after original source recovery and process-supervision tests |
+| Android Guardian | `Guardian.kt`, `GuardianState.kt`, `GuardianHealth.kt`, `GuardianService.kt` | Full source inspected at pinned Android snapshot | Keep Android lifecycle code in Android repo; do not copy Android APIs into Linux |
+| Guardian V3 | Historical commit `76862243a995efd6b307fd0e260632caa4535475`; two isolated Android processes and Binder heartbeat were recorded | Historical commit reference; source still needs inspection at that exact revision | Inspect commit and tests before reuse |
+| Recovery | Linux module planned; Android Guardian fallback behavior exists | No verified Linux recovery source | Define safe recovery boundaries before implementation |
+| Android Bridge | Authenticated bridge planned between Linux and Android | No verified bridge source | Design protocol and trust boundary first |
+| Voice | Android V1 speech and wake-word modules exist | Android source available; no verified Linux voice source | Reuse concepts, not Android APIs |
+| FRIDAY | Study, analysis, and memory submodules planned | No verified Linux source body | Preserve separate identity and data boundary from general JARVIS |
+| Memory | Persistent memory planned | No verified Linux source body | Define storage format, retention, and privacy |
+| Security / Owner Protection | Owner-only protected settings planned; Android policy and voice verification code exists | Android source available; Linux authentication unverified | Never trust a user-supplied owner flag |
+| Tools | Directory exists in historical tree | No verified module inventory | Add only explicitly allowlisted tools |
+| Updates | Directory exists in historical tree | No verified updater implementation | Require verified update design |
+| Dashboard / Control Center | Cyber identity, hybrid navigation, balanced information density recorded | Design notes only | Build after stable APIs and state model |
 
-## Verified Android source files to inspect before porting
+## Verified Android source files inspected
 
-Repository: `ichigoadam212/Jarve-Android-V1`
+Repository: `ichigoadam212/Jarve-Android-V1`, pinned snapshot above.
 
-- `app/src/main/java/com/ichigoadam/jarvis/core/CommandEngine.kt`
-- `app/src/main/java/com/ichigoadam/jarvis/core/JarvisController.kt`
-- `app/src/main/java/com/ichigoadam/jarvis/guardian/Guardian.kt`
-- `app/src/main/java/com/ichigoadam/jarvis/guardian/GuardianState.kt`
-- `app/src/main/java/com/ichigoadam/jarvis/guardian/GuardianHealth.kt`
-- `app/src/main/java/com/ichigoadam/jarvis/guardian/GuardianService.kt`
-- Speech-related changes are present in commits `34d2b6cb5a582632f22f094bbd504be5ce7264fe` and `2c69843afb44501e72dd454b0f2f629f56c41359`.
+- `app/src/main/java/com/ichigoadam/jarvis/core/CommandEngine.kt` — handles `time`, `status`, and `stop` in Arabic/English. Its `stop` response says listening stopped, but the engine itself only returns a result; controller/service lifecycle performs actual stopping.
+- `app/src/main/java/com/ichigoadam/jarvis/core/JarvisController.kt` — integrates voice input/output, wake-word handling, owner voice verification, accessibility actions, memory/style helpers, and command routing.
+- `app/src/main/java/com/ichigoadam/jarvis/guardian/Guardian.kt` — bounded restart attempts (maximum three).
+- `app/src/main/java/com/ichigoadam/jarvis/guardian/GuardianState.kt` — running/restart-count data model.
+- `app/src/main/java/com/ichigoadam/jarvis/guardian/GuardianHealth.kt` — reads JARVIS service and accessibility connection state.
+- `app/src/main/java/com/ichigoadam/jarvis/guardian/GuardianService.kt` — foreground monitor polls every ten seconds and hands over to Friday fallback after bounded restart attempts.
 
-These files must be read in full and mapped to platform-neutral interfaces before any port is considered complete. Android service lifecycle, permissions, and APIs must not be copied into Linux code.
+Relevant Android speech-history commits include `34d2b6cb5a582632f22f094bbd504be5ce7264fe` and `2c69843afb44501e72dd454b0f2f629f56c41359`.
+
+Android service lifecycle, permissions, accessibility, and APIs must not be copied into Linux code.
 
 ## Current development-branch scaffold (not recovered original source)
 
-The existing branch contains a newer Python foundation under `src/jarvis/` with an event bus, event types, command engine, policy, logger, and an in-process Guardian health-check monitor, plus tests and CI.
+The existing branch contains a newer Python foundation under `src/jarvis/`: event bus, event types, command engine, policy, logger, in-process Guardian health-check monitor, tests, and CI.
 
-This foundation is not the original `/home/jarvis/TL1` source tree. Keep it isolated while comparing it against recovered behavior. In particular, the current Guardian implementation does not inspect or restart operating-system processes.
+This foundation is not the original `/home/jarvis/TL1` source tree. Keep it isolated while comparing behavior. The current Guardian implementation does not inspect or restart operating-system processes.
 
-## Required recovery sequence
+## Required implementation sequence
 
-1. Inspect the full Android source files and their history; record exact behavior and tests.
-2. Recover the original Linux files from the prior TL1 workspace or original project artifacts. Do not recreate them from names or summaries.
-3. Compare original Linux behavior with the current Python scaffold; preserve newer, verified behavior and record every intentional change.
+1. Inspect the Guardian V3 commit and the remaining Android modules needed by each Linux feature.
+2. Recover the original Linux files from the previous TL1 workspace or original project artifacts. Do not recreate them from names or summaries.
+3. Compare original Linux behavior with the current Python scaffold; preserve verified behavior and record intentional changes.
 4. Port platform-neutral components first: configuration validation, logger, event model, command contracts, and status reporting.
 5. Implement Guardian process supervision, Recovery, Security, Memory, Bridge, Voice, FRIDAY, Tools, Updates, and UI as separately testable modules with explicit trust boundaries.
-6. Run unit, integration, and security tests on each module. Do not report a component as complete until its tests pass.
+6. Run unit, integration, and security tests on each module. Do not report a component complete until tests pass.
 7. Only then open a pull request to `main`.
 
 ## Evidence labels
 
 - **Verified source**: a file exists in a Git repository and its full contents have been inspected.
 - **Historical behavior**: a previous conversation records a command result or observed behavior, but not necessarily the original source.
-- **Planned**: a design or intention was discussed, without evidence of implementation.
+- **Planned**: a design or intention was discussed without evidence of implementation.
 - **Ported**: adapted code exists in this repository and passes its tests.
