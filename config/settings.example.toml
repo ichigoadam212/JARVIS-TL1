@@ -1,0 +1,11 @@
+[app]
+name = "JARVIS TL1"
+environment = "development"
+log_level = "INFO"
+
+[guardian]
+failure_threshold = 2
+
+[security]
+# No API keys or passwords belong in this file.
+allow_shell_commands = false
