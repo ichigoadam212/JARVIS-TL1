@@ -10,12 +10,14 @@ from enum import Enum
 class AccessLevel(str, Enum):
     PUBLIC = "public"
     OWNER_ONLY = "owner_only"
+    SECRET_OWNER_ONLY = "secret_owner_only"
 
 
 @dataclass(frozen=True, slots=True)
 class Principal:
     subject: str = "anonymous"
     is_owner: bool = False
+    secret_mode_authorized: bool = False
 
 
 class CommandPolicy:
@@ -27,4 +29,10 @@ class CommandPolicy:
             return True
         if access_level is AccessLevel.OWNER_ONLY:
             return principal.is_owner and principal.subject != "anonymous"
+        if access_level is AccessLevel.SECRET_OWNER_ONLY:
+            return (
+                principal.is_owner
+                and principal.subject != "anonymous"
+                and principal.secret_mode_authorized
+            )
         return False
