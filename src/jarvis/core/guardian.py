@@ -23,6 +23,7 @@ class GuardianMonitor:
         self._threshold = failure_threshold
         self._checks: dict[str, Callable[[], bool]] = {}
         self._failures: dict[str, int] = {}
+        self._alerted: set[str] = set()
 
     def register_check(self, name: str, check: Callable[[], bool]) -> None:
         if not name or name in self._checks:
@@ -34,14 +35,18 @@ class GuardianMonitor:
         results: list[CheckResult] = []
         for name, check in self._checks.items():
             healthy = bool(check())
-            self._failures[name] = 0 if healthy else self._failures[name] + 1
+            previous_failures = self._failures[name]
+            self._failures[name] = 0 if healthy else previous_failures + 1
             result = CheckResult(name, healthy, self._failures[name])
             results.append(result)
-            if healthy:
-                self._bus.publish(Event("guardian.check_recovered", {"name": name}))
-            elif result.consecutive_failures >= self._threshold:
+
+            if not healthy and result.consecutive_failures == self._threshold:
+                self._alerted.add(name)
                 self._bus.publish(Event(
                     "guardian.check_failed",
                     {"name": name, "consecutive_failures": result.consecutive_failures},
                 ))
+            elif healthy and name in self._alerted:
+                self._alerted.remove(name)
+                self._bus.publish(Event("guardian.check_recovered", {"name": name}))
         return results
