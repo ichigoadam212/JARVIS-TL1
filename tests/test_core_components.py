@@ -84,3 +84,31 @@ def test_guardian_emits_failure_after_threshold_and_recovery():
     healthy["value"] = True
     assert guardian.run_once()[0].consecutive_failures == 0
     assert events[-1].name == "guardian.check_recovered"
+
+
+
+def test_secret_owner_only_requires_owner_and_explicit_secret_authorization():
+    engine = CommandEngine()
+    engine.register(Command(
+        "secret", "Secret-mode test command",
+        lambda: CommandResult(True, "secret result"),
+        AccessLevel.SECRET_OWNER_ONLY,
+    ))
+
+    assert engine.execute("secret").message == "Permission denied"
+    assert engine.execute("secret", Principal("owner-1", True)).message == "Permission denied"
+    assert engine.execute(
+        "secret", Principal("owner-1", True, secret_mode_authorized=True)
+    ).message == "secret result"
+
+
+def test_secret_authorization_does_not_grant_access_to_anonymous_principal():
+    engine = CommandEngine()
+    engine.register(Command(
+        "secret", "Secret-mode test command",
+        lambda: CommandResult(True, "secret result"),
+        AccessLevel.SECRET_OWNER_ONLY,
+    ))
+
+    actor = Principal("anonymous", True, secret_mode_authorized=True)
+    assert engine.execute("secret", actor).message == "Permission denied"
