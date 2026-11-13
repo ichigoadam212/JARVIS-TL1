@@ -79,8 +79,8 @@ Linux port: keep FRIDAY's school/study assistant role distinct from process reco
 
 ## Actionable Linux TL1 design decisions
 
-1. Reject unknown commands by default.
-2. Separate authorization from speech recognition; voice similarity alone is not owner proof.
+1. Reject unknown commands by default. The Linux policy now has PUBLIC, OWNER_ONLY, and SECRET_OWNER_ONLY levels; secret access requires both an authenticated non-anonymous owner principal and an explicit secret-mode authorization flag.
+2. Separate authorization from speech recognition; voice similarity alone is not owner proof. The principal must be issued by a trusted authentication layer; callers must not self-assert owner or secret-mode fields.
 3. Keep Guardian restart policy separate from the Linux process adapter.
 4. Keep Android Accessibility and app automation inside a permissioned bridge.
 5. Make sending messages draft-and-confirm by default.
