@@ -2,6 +2,8 @@
 from dataclasses import dataclass
 from typing import Callable
 
+from jarvis.core.policy import AccessLevel, CommandPolicy, Principal
+
 
 @dataclass(frozen=True, slots=True)
 class CommandResult:
@@ -15,10 +17,11 @@ class Command:
     name: str
     description: str
     handler: Callable[[], CommandResult]
+    access_level: AccessLevel = AccessLevel.PUBLIC
 
 
 class CommandEngine:
-    """Dispatch only commands explicitly registered by the application."""
+    """Dispatch registered commands after checking their access policy."""
 
     def __init__(self) -> None:
         self._commands: dict[str, Command] = {}
@@ -32,7 +35,7 @@ class CommandEngine:
             raise ValueError("command name must be non-empty and unique")
         self._commands[key] = command
 
-    def execute(self, raw_input: str) -> CommandResult:
+    def execute(self, raw_input: str, principal: Principal | None = None) -> CommandResult:
         parts = raw_input.strip().split()
         if not parts:
             return CommandResult(False, "Empty command")
@@ -41,10 +44,17 @@ class CommandEngine:
             return CommandResult(False, "Unknown command. Use 'help'.")
         if len(parts) > 1:
             return CommandResult(False, "This command does not accept arguments")
+        actor = principal or Principal()
+        if not CommandPolicy.allows(command.access_level, actor):
+            return CommandResult(False, "Permission denied")
         return command.handler()
 
     def _help(self) -> CommandResult:
-        lines = [f"{item.name}: {item.description}" for item in self._commands.values()]
+        lines = [
+            f"{item.name}: {item.description}"
+            for item in self._commands.values()
+            if item.access_level is AccessLevel.PUBLIC
+        ]
         return CommandResult(True, "\n".join(lines))
 
     @staticmethod
