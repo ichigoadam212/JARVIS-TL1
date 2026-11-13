@@ -54,7 +54,7 @@ Original environment: Debian 13 (trixie), aarch64, Python 3.13.5, unprivileged `
 | Android Command Engine | `core/CommandEngine.kt` | Full source inspected at pinned Android snapshot | Keep as Android implementation; port behavior only where appropriate |
 | Linux Guardian v0.1 | Two monitor cycles were reported; monitor watched itself, not an external JARVIS process | Conversation evidence only; exact source body unavailable | Rebuild only after original source recovery and process-supervision tests |
 | Android Guardian | `Guardian.kt`, `GuardianState.kt`, `GuardianHealth.kt`, `GuardianService.kt` | Full source inspected at pinned Android snapshot | Keep Android lifecycle code in Android repo; do not copy Android APIs into Linux |
-| Guardian V3 | Historical commit `76862243a995efd6b307fd0e260632caa4535475`; two isolated Android processes and Binder heartbeat were recorded | Historical commit reference; source still needs inspection at that exact revision | Inspect commit and tests before reuse |
+| Guardian V3 | `ichigoadam212/adam` commit `76862243a995efd6b307fd0e260632caa4535475`; full Guardian service diff inspected | Verified Android source history; supervisor and Binder gateway files inspected at `09ba72a13d27ca71144ff859ce60998467b07c78` | Port only platform-neutral supervision policy; keep Binder and Android service lifecycle Android-only |
 | Recovery | Linux module planned; Android Guardian fallback behavior exists | No verified Linux recovery source | Define safe recovery boundaries before implementation |
 | Android Bridge | Authenticated bridge planned between Linux and Android | No verified bridge source | Design protocol and trust boundary first |
 | Voice | Android V1 speech and wake-word modules exist | Android source available; no verified Linux voice source | Reuse concepts, not Android APIs |
@@ -80,6 +80,22 @@ Relevant Android speech-history commits include `34d2b6cb5a582632f22f094bbd504be
 
 Android service lifecycle, permissions, accessibility, and APIs must not be copied into Linux code.
 
+## Additional verified Guardian V3 source (separate Android repository)
+
+Repository: `ichigoadam212/adam`.
+
+- Guardian integration commit: [`76862243a995efd6b307fd0e260632caa4535475`](https://github.com/ichigoadam212/adam/commit/76862243a995efd6b307fd0e260632caa4535475).
+- Full source files inspected at snapshot `09ba72a13d27ca71144ff859ce60998467b07c78`:
+  - `android/app/src/main/java/com/jarvis/system/JarvisGuardianService.kt`
+  - `android/app/src/main/java/com/jarvis/system/JarvisSupervisor.kt`
+  - `android/app/src/main/java/com/jarvis/system/JarvisService.kt`
+  - `android/app/src/main/aidl/com/jarvis/system/IJarvisGateway.aidl`
+- Verified behavior: Guardian polls the JARVIS runtime through a narrow Binder health interface every 5 seconds; a missing connection or non-`ready` state requests recovery.
+- The supervisor allows at most five attempts, uses exponential backoff starting at 1 second and capped at 60 seconds, and resets its failure counter after a healthy run.
+- The Binder gateway exposes runtime status and tool-name discovery only; it does not expose unrestricted tool execution.
+- These are Android-specific sources. Linux TL1 should implement equivalent process-health contracts with Linux-native IPC/process supervision, not copy Android classes or APIs.
+- This source history does not establish that the original Linux `/home/jarvis/TL1` files are present in GitHub.
+
 ## Current development-branch scaffold (not recovered original source)
 
 The existing branch contains a newer Python foundation under `src/jarvis/`: event bus, event types, command engine, policy, logger, in-process Guardian health-check monitor, tests, and CI.
@@ -88,7 +104,7 @@ This foundation is not the original `/home/jarvis/TL1` source tree. Keep it isol
 
 ## Required implementation sequence
 
-1. Inspect the Guardian V3 commit and the remaining Android modules needed by each Linux feature.
+1. Guardian V3 source inspection is complete for the Android reference above; inspect remaining Android modules only when they map to a specific Linux feature.
 2. Recover the original Linux files from the previous TL1 workspace or original project artifacts. Do not recreate them from names or summaries.
 3. Compare original Linux behavior with the current Python scaffold; preserve verified behavior and record intentional changes.
 4. Port platform-neutral components first: configuration validation, logger, event model, command contracts, and status reporting.
