@@ -2,6 +2,7 @@ from jarvis.core.command_engine import Command, CommandEngine, CommandResult
 from jarvis.core.event_bus import EventBus
 from jarvis.core.events import Event
 from jarvis.core.guardian import GuardianMonitor
+from jarvis.core.policy import AccessLevel, Principal
 
 
 def test_event_bus_dispatch_and_unsubscribe():
@@ -43,6 +44,29 @@ def test_command_registration_rejects_duplicates():
         raise AssertionError("duplicate command should be rejected")
 
 
+def test_owner_only_command_is_denied_by_default():
+    engine = CommandEngine()
+    engine.register(Command(
+        "private", "Owner-only test command",
+        lambda: CommandResult(True, "private result"),
+        AccessLevel.OWNER_ONLY,
+    ))
+
+    assert engine.execute("private").message == "Permission denied"
+    assert engine.execute("private", Principal("owner-1", True)).message == "private result"
+
+
+def test_anonymous_principal_cannot_claim_owner_access():
+    engine = CommandEngine()
+    engine.register(Command(
+        "private", "Owner-only test command",
+        lambda: CommandResult(True, "private result"),
+        AccessLevel.OWNER_ONLY,
+    ))
+
+    assert engine.execute("private", Principal()).message == "Permission denied"
+
+
 def test_guardian_emits_failure_after_threshold_and_recovery():
     bus = EventBus()
     events = []
@@ -53,7 +77,9 @@ def test_guardian_emits_failure_after_threshold_and_recovery():
 
     assert guardian.run_once()[0].consecutive_failures == 1
     assert guardian.run_once()[0].consecutive_failures == 2
-    assert any(event.name == "guardian.check_failed" for event in events)
+    assert sum(event.name == "guardian.check_failed" for event in events) == 1
+    assert guardian.run_once()[0].consecutive_failures == 3
+    assert sum(event.name == "guardian.check_failed" for event in events) == 1
 
     healthy["value"] = True
     assert guardian.run_once()[0].consecutive_failures == 0
