@@ -130,3 +130,8 @@ This foundation is not the original `/home/jarvis/TL1` source tree. Keep it isol
 - **Historical behavior**: a previous conversation records a command result or observed behavior, but not necessarily the original source.
 - **Planned**: a design or intention was discussed without evidence of implementation.
 - **Ported**: adapted code exists in this repository and passes its tests.
+
+## Current verification note
+
+- Linux authorization now distinguishes PUBLIC, OWNER_ONLY, and SECRET_OWNER_ONLY. Secret mode requires a non-anonymous owner principal plus explicit secret-mode authorization.
+- GitHub Actions run 42 failed during test collection because the restart-policy test imported the class from the wrong module. The import was corrected in commit `244eecec9990d4a3b830548a991594099ff9c557`; a subsequent passing CI result has not yet been observed. Do not treat the failed run as a code-test failure beyond that collection error, and do not report CI as green.
