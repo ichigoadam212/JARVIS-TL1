@@ -11,7 +11,8 @@ Implemented on the development branch:
 - Central console Logger.
 - Allowlisted Command Engine (`help`, `status`, `exit` only).
 - Guardian health checks for registered in-process components.
-- Initial automated tests and GitHub Actions CI.
+- A bounded restart-policy primitive ported from verified Guardian V3 history (five attempts, exponential backoff capped at 60 seconds); policy only, not an OS process restarter.
+- Automated tests for core behavior and restart-policy limits; GitHub Actions workflow is configured, but no CI result is currently reported.
 
 Not implemented yet: Android Bridge, external process supervision, AI provider integration, persistent memory, owner authentication, dashboard, or background service.
 
