@@ -81,6 +81,17 @@ Relevant Android speech-history commits include `34d2b6cb5a582632f22f094bbd504be
 
 Android service lifecycle, permissions, accessibility, and APIs must not be copied into Linux code.
 
+## Android V1 reference audit
+
+A source-level audit of the immutable Android V1 snapshot `2c69843afb44501e72dd454b0f2f629f56c41359` is recorded in [`docs/ANDROID_REFERENCE_AUDIT.md`](ANDROID_REFERENCE_AUDIT.md). It covers the controller, command router/policies, resource policy, voice input/output, wake-word text detector, owner gate/profile, speaker verifier, style sample store/analyzer/reply generator, Accessibility integration, and FRIDAY fallback.
+
+Key port constraints established by source inspection:
+- Reject unknown commands by default; Android's current router defaults unknown input to PUBLIC.
+- Voice similarity is explicitly not biometric-grade authentication.
+- Keep Accessibility and app automation in the permissioned Android Bridge; default message sending to draft-and-confirm.
+- Separate FRIDAY's study/assistant role from Guardian process recovery.
+- The Android style store is not a general persistent memory implementation.
+
 ## Additional verified Guardian V3 source (separate Android repository)
 
 Repository: `ichigoadam212/adam`.
