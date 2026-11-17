@@ -12,7 +12,7 @@ Implemented on the development branch:
 - Allowlisted Command Engine (`help`, `status`, `time`, `exit` only); the `time` command reports local time through an injectable timezone-aware clock.
 - Guardian health checks for registered in-process components.
 - A bounded restart-policy primitive ported from verified Guardian V3 history (five attempts, exponential backoff capped at 60 seconds); policy only, not an OS process restarter.
-- Automated tests cover core behavior, restart-policy limits, and secret-owner authorization. The latest completed pre-change GitHub Actions run (#61) passed; this time-command change requires a fresh CI run before acceptance.
+- Automated tests cover core behavior, restart-policy limits, and secret-owner authorization. Require a successful GitHub Actions run for the exact latest branch head before accepting further changes.
 
 Not implemented yet: Android Bridge, external process supervision, AI provider integration, persistent memory, owner authentication, dashboard, or background service.
 
