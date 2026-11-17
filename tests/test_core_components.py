@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta, timezone
+
 import pytest
 
 from jarvis.core.command_engine import Command, CommandEngine, CommandResult
@@ -49,6 +51,27 @@ def test_command_engine_only_runs_registered_commands():
     assert not engine.execute("not-a-command").ok
     assert not engine.execute("status anything").ok
     assert engine.execute("exit").should_exit
+
+
+def test_time_command_uses_injected_timezone_aware_clock():
+    engine = CommandEngine(clock=lambda: datetime(
+        2026, 11, 17, 11, 30, tzinfo=timezone(timedelta(hours=2))
+    ))
+
+    result = engine.execute("time")
+
+    assert result.ok
+    assert result.message == "2026-11-17T11:30:00+02:00"
+    assert "time: Show local system time" in engine.execute("help").message
+
+
+def test_time_command_rejects_naive_clock_values():
+    engine = CommandEngine(clock=lambda: datetime(2026, 11, 17, 11, 30))
+
+    result = engine.execute("time")
+
+    assert not result.ok
+    assert "timezone-aware" in result.message
 
 
 def test_command_registration_rejects_duplicates():
