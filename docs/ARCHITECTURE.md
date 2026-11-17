@@ -2,7 +2,7 @@
 
 ## Current implementation
 
-- **Command Engine:** dispatches only explicitly registered commands: `help`, `status`, and `exit`.
+- **Command Engine:** dispatches only explicitly registered commands: `help`, `status`, `time`, and `exit`; the time provider is injectable and must return a timezone-aware value.
 - **Command Policy:** supports public and owner-only command levels; privileged commands are denied by default for anonymous callers.
 - **Event model and Event Bus:** typed event envelopes and synchronous in-process publish/subscribe.
 - **Logger:** one central console logger. Credentials and tokens must never be logged.
