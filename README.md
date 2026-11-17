@@ -13,7 +13,7 @@ Implemented on the development branch:
 - Guardian health checks for registered in-process components.
 - A bounded restart-policy primitive ported from verified Guardian V3 history (five attempts, exponential backoff capped at 60 seconds); policy only, not an OS process restarter.
 - Android Bridge protocol foundation on the dedicated work branch: HMAC-signed, read-only status/capability envelopes with timestamp checks and bounded replay protection. It has no socket, Android adapter, or process-control actions.
-- Automated tests cover core behavior, restart-policy limits, secret-owner authorization, and bridge protocol validation. The latest observed CI run on the integration branch (#47, commit `01b6440a`) passed.
+- Automated tests cover core behavior, restart-policy limits, secret-owner authorization, and bridge protocol validation. The integration branch CI run #47 (`01b6440a`) passed, and bridge protocol branch run #56 (`3b4e5364`) passed its Python test suite.
 
 Not implemented yet: Android-side bridge adapter/transport, external process supervision, AI provider integration, persistent memory, trusted owner authentication, dashboard, or background service.
 
