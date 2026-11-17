@@ -1,5 +1,6 @@
 """Allowlisted command dispatcher. Never invokes a system shell."""
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Callable
 
 from jarvis.core.policy import AccessLevel, CommandPolicy, Principal
@@ -23,10 +24,12 @@ class Command:
 class CommandEngine:
     """Dispatch registered commands after checking their access policy."""
 
-    def __init__(self) -> None:
+    def __init__(self, clock: Callable[[], datetime] | None = None) -> None:
         self._commands: dict[str, Command] = {}
+        self._clock = clock or (lambda: datetime.now().astimezone())
         self.register(Command("help", "Show available commands", self._help))
         self.register(Command("status", "Show core status", self._status))
+        self.register(Command("time", "Show local system time", self._time))
         self.register(Command("exit", "Stop the interactive session", self._exit))
 
     def register(self, command: Command) -> None:
@@ -60,6 +63,12 @@ class CommandEngine:
     @staticmethod
     def _status() -> CommandResult:
         return CommandResult(True, "JARVIS TL1 core: online (local session)")
+
+    def _time(self) -> CommandResult:
+        current = self._clock()
+        if not isinstance(current, datetime) or current.tzinfo is None or current.utcoffset() is None:
+            return CommandResult(False, "Clock provider must return a timezone-aware datetime")
+        return CommandResult(True, current.isoformat(timespec="seconds"))
 
     @staticmethod
     def _exit() -> CommandResult:
