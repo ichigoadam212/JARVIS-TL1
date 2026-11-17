@@ -57,7 +57,7 @@ Original environment: Debian 13 (trixie), aarch64, Python 3.13.5, unprivileged `
 | Guardian V3 | `ichigoadam212/adam` commit `76862243a995efd6b307fd0e260632caa4535475`; full Guardian service diff inspected | Verified Android source history; supervisor and Binder gateway files inspected at `09ba72a13d27ca71144ff859ce60998467b07c78` | Port only platform-neutral supervision policy; keep Binder and Android service lifecycle Android-only |
 | Linux restart policy port | `src/jarvis/core/restart_supervisor.py`; `docs/GUARDIAN_PORT.md` | New platform-neutral adaptation of verified Android retry policy; isolated unit tests pass locally | Keep policy separate from any future Linux process-control adapter |
 | Recovery | Linux module planned; Android Guardian fallback behavior exists | No verified Linux recovery source | Define safe recovery boundaries before implementation |
-| Android Bridge | Authenticated bridge planned between Linux and Android | No verified bridge source | Design protocol and trust boundary first |
+| Android Bridge | Authenticated bridge planned between Linux and Android; Guardian V3 Binder health contract is verified Android source | New protocol-only Python foundation on `work/tl1-android-bridge-protocol`: HMAC-signed read-only status/capability envelopes, timestamp checks, bounded process-local replay cache; no socket or Kotlin adapter | Keep it isolated; implement matching Android adapter, session handshake, and loopback transport before device integration. Never grant owner privileges from bridge authentication |
 | Voice | Android V1 speech and wake-word modules exist | Android source available; no verified Linux voice source | Reuse concepts, not Android APIs |
 | FRIDAY | Study, analysis, and memory submodules planned | No verified Linux source body | Preserve separate identity and data boundary from general JARVIS |
 | Memory | Persistent memory planned | No verified Linux source body | Define storage format, retention, and privacy |
@@ -110,7 +110,7 @@ Repository: `ichigoadam212/adam`.
 
 ## Current development-branch scaffold (not recovered original source)
 
-The existing branch contains a newer Python foundation under `src/jarvis/`: event bus, event types, command engine, policy, logger, in-process Guardian health-check monitor, tests, and CI.
+The existing branch contains a newer Python foundation under `src/jarvis/`: event bus, event types, command engine, policy, logger, in-process Guardian health-check monitor, tests, and CI. A separate branch `work/tl1-android-bridge-protocol` adds only the HMAC/read-only protocol foundation under `src/jarvis/bridge/`; it does not implement transport or Android integration.
 
 This foundation is not the original `/home/jarvis/TL1` source tree. Keep it isolated while comparing behavior. The current Guardian implementation does not inspect or restart operating-system processes.
 
@@ -134,4 +134,4 @@ This foundation is not the original `/home/jarvis/TL1` source tree. Keep it isol
 ## Current verification note
 
 - Linux authorization now distinguishes PUBLIC, OWNER_ONLY, and SECRET_OWNER_ONLY. Secret mode requires a non-anonymous owner principal plus explicit secret-mode authorization.
-- GitHub Actions run 42 failed during test collection because the restart-policy test imported the class from the wrong module. The import was corrected in commit `244eecec9990d4a3b830548a991594099ff9c557`; a subsequent passing CI result has not yet been observed. Do not treat the failed run as a code-test failure beyond that collection error, and do not report CI as green.
+- The earlier GitHub Actions run 42 failed during test collection because the restart-policy test imported the class from the wrong module. The import was corrected; integration-branch run 47 (`01b6440a0e1cac6de0240b6ee59b5a814922c64f`) subsequently passed all CI steps. The new bridge branch has its own CI run pending and must pass before its protocol foundation is considered validated.
