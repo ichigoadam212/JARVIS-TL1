@@ -129,6 +129,7 @@ class BridgeAuthenticator:
         request_id: str | None = None,
         nonce: str | None = None,
         timestamp: int | None = None,
+        payload: Mapping[str, Any] | None = None,
     ) -> BridgeRequest:
         """Create a signed request for one of the protocol's read-only actions."""
         request = BridgeRequest(
@@ -137,6 +138,7 @@ class BridgeAuthenticator:
             action=action,
             timestamp=int(self._clock()) if timestamp is None else timestamp,
             nonce=nonce or secrets.token_urlsafe(24),
+            payload={} if payload is None else payload,
         )
         signature = hmac.new(self._secret, _canonical_bytes(request), hashlib.sha256).hexdigest()
         return BridgeRequest(
@@ -151,6 +153,8 @@ class BridgeAuthenticator:
 
     def verify(self, request: BridgeRequest) -> None:
         """Verify authenticity and freshness, then consume the nonce once."""
+        if not isinstance(request, BridgeRequest):
+            raise BridgeProtocolError("Expected a BridgeRequest envelope.")
         signed_content = _canonical_bytes(request)
         if not isinstance(request.signature, str) or not _SIGNATURE_RE.fullmatch(request.signature):
             raise BridgeAuthenticationError("Invalid bridge signature format.")
