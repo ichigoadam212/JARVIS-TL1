@@ -134,4 +134,4 @@ This foundation is not the original `/home/jarvis/TL1` source tree. Keep it isol
 ## Current verification note
 
 - Linux authorization now distinguishes PUBLIC, OWNER_ONLY, and SECRET_OWNER_ONLY. Secret mode requires a non-anonymous owner principal plus explicit secret-mode authorization.
-- The earlier GitHub Actions run 42 failed during test collection because the restart-policy test imported the class from the wrong module. The import was corrected; integration-branch run 47 (`01b6440a0e1cac6de0240b6ee59b5a814922c64f`) subsequently passed all CI steps. The new bridge branch has its own CI run pending and must pass before its protocol foundation is considered validated.
+- The earlier GitHub Actions run 42 failed during test collection because the restart-policy test imported the class from the wrong module. The import was corrected; integration-branch run 47 (`01b6440a0e1cac6de0240b6ee59b5a814922c64f`) subsequently passed all CI steps. Bridge protocol branch CI run #56 passed on commit `3b4e536487b845d51bc1156090b915a495c4b04d`; Android Kotlin parity and transport validation remain outstanding.
