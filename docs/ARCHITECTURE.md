@@ -8,11 +8,12 @@
 - **Logger:** one central console logger. Credentials and tokens must never be logged.
 - **Guardian Monitor:** runs explicitly registered health checks and emits failure/recovery events on state transitions. It does not inspect, kill, or restart operating-system processes.
 - **Restart Supervisor:** platform-neutral retry policy with a five-attempt limit and exponential backoff capped at 60 seconds, based on verified Guardian V3 Android source. It decides whether a retry is permitted; it does not control processes.
+- **Android Bridge protocol foundation:** a separate work branch defines HMAC-signed, read-only `status.read` and `capabilities.read` request envelopes with timestamp and bounded replay checks. This is protocol code only; no listener, Android adapter, or privileged action exists.
 - **Entry point:** `python -m jarvis` starts a local interactive session.
 
 ## Security and trust boundaries
 
-The current core is local and in-process. It has no network listener, Android integration, external AI provider, persistent memory, background daemon, or privileged system access.
+The current core is local and in-process. The bridge protocol foundation does not open a network listener or connect to Android. There is no external AI provider, persistent memory, background daemon, or privileged system access.
 
 The command engine never passes input to a shell. New commands must be registered in code and must have a narrow, documented purpose. Owner-only policy checks are a framework, not a login system: a future trusted authentication layer must create the `Principal` object. Never accept an owner flag directly from an untrusted network request or user-controlled configuration.
 
@@ -24,7 +25,7 @@ Any future system integration must use explicit allowlists, argument arrays (nev
 2. Configuration validation and structured audit events.
 3. Persistent, versioned memory with explicit retention controls.
 4. External process supervision (separate from this in-process health monitor and restart-policy primitive).
-5. Android Bridge with an authenticated, least-privilege protocol.
+5. Android Bridge transport and Kotlin adapter; a protocol-only HMAC/read-only foundation exists on `work/tl1-android-bridge-protocol`.
 6. Optional AI provider adapter with server-side secrets only.
 7. Dashboard and Control Center.
 
