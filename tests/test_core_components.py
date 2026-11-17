@@ -1,3 +1,5 @@
+import pytest
+
 from jarvis.core.command_engine import Command, CommandEngine, CommandResult
 from jarvis.core.event_bus import EventBus
 from jarvis.core.events import Event
@@ -15,6 +17,21 @@ def test_event_bus_dispatch_and_unsubscribe():
 
     unsubscribe()
     assert bus.publish(Event("demo")) == 0
+
+
+def test_event_payload_is_deeply_copied_and_read_only():
+    source = {"nested": {"items": [1, 2]}}
+    event = Event("demo", source)
+
+    source["nested"]["items"].append(3)
+    assert event.payload["nested"]["items"] == (1, 2)
+
+    with pytest.raises(TypeError):
+        event.payload["new"] = "value"
+    with pytest.raises(TypeError):
+        event.payload["nested"]["new"] = "value"
+    with pytest.raises(AttributeError):
+        event.payload["nested"]["items"].append(3)
 
 
 def test_event_bus_wildcard_subscription():
