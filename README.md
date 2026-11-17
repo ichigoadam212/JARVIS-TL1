@@ -9,10 +9,10 @@ Implemented on the development branch:
 - Python 3.12+ package layout and editable installation.
 - Event model and thread-safe in-process Event Bus.
 - Central console Logger.
-- Allowlisted Command Engine (`help`, `status`, `exit` only).
+- Allowlisted Command Engine (`help`, `status`, `time`, `exit` only); the `time` command reports local time through an injectable timezone-aware clock.
 - Guardian health checks for registered in-process components.
 - A bounded restart-policy primitive ported from verified Guardian V3 history (five attempts, exponential backoff capped at 60 seconds); policy only, not an OS process restarter.
-- Automated tests cover core behavior, restart-policy limits, and secret-owner authorization. The latest observed GitHub Actions run failed during test collection because of an incorrect test import; that import has been corrected in a later commit, and a passing rerun is still pending.
+- Automated tests cover core behavior, restart-policy limits, and secret-owner authorization. The latest completed pre-change GitHub Actions run (#61) passed; this time-command change requires a fresh CI run before acceptance.
 
 Not implemented yet: Android Bridge, external process supervision, AI provider integration, persistent memory, owner authentication, dashboard, or background service.
 
