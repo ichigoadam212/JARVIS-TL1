@@ -1,3 +1,7 @@
+from datetime import datetime, timedelta, timezone
+
+import pytest
+
 from jarvis.core.command_engine import Command, CommandEngine, CommandResult
 from jarvis.core.event_bus import EventBus
 from jarvis.core.events import Event
@@ -17,6 +21,21 @@ def test_event_bus_dispatch_and_unsubscribe():
     assert bus.publish(Event("demo")) == 0
 
 
+def test_event_payload_is_deeply_copied_and_read_only():
+    source = {"nested": {"items": [1, 2]}}
+    event = Event("demo", source)
+
+    source["nested"]["items"].append(3)
+    assert event.payload["nested"]["items"] == (1, 2)
+
+    with pytest.raises(TypeError):
+        event.payload["new"] = "value"
+    with pytest.raises(TypeError):
+        event.payload["nested"]["new"] = "value"
+    with pytest.raises(AttributeError):
+        event.payload["nested"]["items"].append(3)
+
+
 def test_event_bus_wildcard_subscription():
     bus = EventBus()
     received = []
@@ -34,10 +53,36 @@ def test_command_engine_only_runs_registered_commands():
     assert engine.execute("exit").should_exit
 
 
+def test_command_requires_an_explicit_access_level():
+    with pytest.raises(TypeError):
+        Command("unclassified", "Missing access policy", lambda: CommandResult(True, "bad"))
+
+
+def test_time_command_uses_injected_timezone_aware_clock():
+    engine = CommandEngine(clock=lambda: datetime(
+        2026, 11, 17, 11, 30, tzinfo=timezone(timedelta(hours=2))
+    ))
+
+    result = engine.execute("time")
+
+    assert result.ok
+    assert result.message == "2026-11-17T11:30:00+02:00"
+    assert "time: Show local system time" in engine.execute("help").message
+
+
+def test_time_command_rejects_naive_clock_values():
+    engine = CommandEngine(clock=lambda: datetime(2026, 11, 17, 11, 30))
+
+    result = engine.execute("time")
+
+    assert not result.ok
+    assert "timezone-aware" in result.message
+
+
 def test_command_registration_rejects_duplicates():
     engine = CommandEngine()
     try:
-        engine.register(Command("status", "duplicate", lambda: CommandResult(True, "bad")))
+        engine.register(Command("status", "duplicate", lambda: CommandResult(True, "bad"), AccessLevel.PUBLIC))
     except ValueError:
         pass
     else:
