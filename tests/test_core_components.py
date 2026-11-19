@@ -53,6 +53,11 @@ def test_command_engine_only_runs_registered_commands():
     assert engine.execute("exit").should_exit
 
 
+def test_command_requires_an_explicit_access_level():
+    with pytest.raises(TypeError):
+        Command("unclassified", "Missing access policy", lambda: CommandResult(True, "bad"))
+
+
 def test_time_command_uses_injected_timezone_aware_clock():
     engine = CommandEngine(clock=lambda: datetime(
         2026, 11, 17, 11, 30, tzinfo=timezone(timedelta(hours=2))
@@ -77,7 +82,7 @@ def test_time_command_rejects_naive_clock_values():
 def test_command_registration_rejects_duplicates():
     engine = CommandEngine()
     try:
-        engine.register(Command("status", "duplicate", lambda: CommandResult(True, "bad")))
+        engine.register(Command("status", "duplicate", lambda: CommandResult(True, "bad"), AccessLevel.PUBLIC))
     except ValueError:
         pass
     else:

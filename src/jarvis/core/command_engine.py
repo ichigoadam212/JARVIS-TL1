@@ -18,7 +18,7 @@ class Command:
     name: str
     description: str
     handler: Callable[[], CommandResult]
-    access_level: AccessLevel = AccessLevel.PUBLIC
+    access_level: AccessLevel
 
 
 class CommandEngine:
@@ -27,10 +27,10 @@ class CommandEngine:
     def __init__(self, clock: Callable[[], datetime] | None = None) -> None:
         self._commands: dict[str, Command] = {}
         self._clock = clock or (lambda: datetime.now().astimezone())
-        self.register(Command("help", "Show available commands", self._help))
-        self.register(Command("status", "Show core status", self._status))
-        self.register(Command("time", "Show local system time", self._time))
-        self.register(Command("exit", "Stop the interactive session", self._exit))
+        self.register(Command("help", "Show available commands", self._help, AccessLevel.PUBLIC))
+        self.register(Command("status", "Show core status", self._status, AccessLevel.PUBLIC))
+        self.register(Command("time", "Show local system time", self._time, AccessLevel.PUBLIC))
+        self.register(Command("exit", "Stop the interactive session", self._exit, AccessLevel.PUBLIC))
 
     def register(self, command: Command) -> None:
         key = command.name.strip().lower()

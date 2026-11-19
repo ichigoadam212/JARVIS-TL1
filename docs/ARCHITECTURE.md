@@ -14,7 +14,7 @@
 
 The current core is local and in-process. It has no network listener, Android integration, external AI provider, persistent memory, background daemon, or privileged system access.
 
-The command engine never passes input to a shell. New commands must be registered in code and must have a narrow, documented purpose. Owner-only policy checks are a framework, not a login system: a future trusted authentication layer must create the `Principal` object. Never accept an owner flag directly from an untrusted network request or user-controlled configuration.
+The command engine never passes input to a shell. Every new command must be registered in code, have a narrow documented purpose, and declare its `AccessLevel` explicitly; there is no implicit PUBLIC default. Owner-only policy checks are a framework, not a login system: a future trusted authentication layer must create the `Principal` object. Never accept an owner flag directly from an untrusted network request or user-controlled configuration.
 
 Any future system integration must use explicit allowlists, argument arrays (never shell strings), least privilege, secret-safe logging, and tests. API keys belong in the hosting platform's secret store, never in source files or commits.
 
