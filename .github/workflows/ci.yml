@@ -6,8 +6,10 @@ on:
       - main
       - "work/**"
   pull_request:
+    # Run stacked feature PRs (for example, Bridge -> TL1 development branch) as well as main PRs.
     branches:
       - main
+      - "work/**"
 
 permissions:
   contents: read
