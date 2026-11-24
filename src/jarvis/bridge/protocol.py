@@ -95,6 +95,11 @@ def _canonical_bytes(request: BridgeRequest) -> bytes:
 class BridgeAuthenticator:
     """HMAC authentication plus bounded, process-local nonce replay protection.
 
+    Verification tracks a nondecreasing wall-clock high-water mark. If the
+    system clock moves backwards, requests fail closed until it catches up;
+    this prevents cache cleanup followed by clock rollback from revalidating
+    an already consumed nonce.
+
     The secret must be provisioned outside the repository and supplied in
     memory. The same secret must be provisioned securely to both peers.
     """
@@ -120,6 +125,7 @@ class BridgeAuthenticator:
         self._max_nonces = max_nonces
         self._clock = clock
         self._seen_nonces: dict[str, int] = {}
+        self._highest_wall_time_seen: int | None = None
         self._lock = Lock()
 
     def create_request(
@@ -164,11 +170,17 @@ class BridgeAuthenticator:
             raise BridgeAuthenticationError("Bridge signature verification failed.")
 
         now = int(self._clock())
-        if abs(now - request.timestamp) > self._max_clock_skew:
-            raise BridgeAuthenticationError("Bridge request is outside the allowed time window.")
-
-        expires_at = request.timestamp + self._max_clock_skew
         with self._lock:
+            if self._highest_wall_time_seen is not None and now < self._highest_wall_time_seen:
+                raise BridgeAuthenticationError(
+                    "Bridge system clock moved backwards; replay checks are paused until it catches up."
+                )
+            self._highest_wall_time_seen = now
+
+            if abs(now - request.timestamp) > self._max_clock_skew:
+                raise BridgeAuthenticationError("Bridge request is outside the allowed time window.")
+
+            expires_at = request.timestamp + self._max_clock_skew
             expired = [value for value, expiry in self._seen_nonces.items() if expiry < now]
             for value in expired:
                 self._seen_nonces.pop(value, None)
