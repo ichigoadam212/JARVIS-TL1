@@ -92,17 +92,30 @@ def _canonical_bytes(request: BridgeRequest) -> bytes:
     return encoded
 
 
+@dataclass(slots=True)
+class _ReplayState:
+    """Replay state shared by every authenticator using the same secret."""
+
+    max_clock_skew_seconds: int
+    max_nonces: int
+    seen_nonces: dict[str, int] = field(default_factory=dict)
+    highest_wall_time_seen: int | None = None
+    lock: Lock = field(default_factory=Lock, repr=False)
+
+
 class BridgeAuthenticator:
     """HMAC authentication plus bounded, process-local nonce replay protection.
 
-    Verification tracks a nondecreasing wall-clock high-water mark. If the
-    system clock moves backwards, requests fail closed until it catches up;
-    this prevents cache cleanup followed by clock rollback from revalidating
-    an already consumed nonce.
+    Replay state is shared across authenticator instances that use the same
+    secret. Verification also tracks a nondecreasing wall-clock high-water
+    mark; backward clock movement fails closed until the clock catches up.
 
     The secret must be provisioned outside the repository and supplied in
     memory. The same secret must be provisioned securely to both peers.
     """
+
+    _replay_states: dict[bytes, _ReplayState] = {}
+    _replay_states_lock = Lock()
 
     def __init__(
         self,
@@ -120,13 +133,25 @@ class BridgeAuthenticator:
         if type(max_nonces) is not int or max_nonces < 1:
             raise ValueError("max_nonces must be a positive integer.")
 
+        key_id = hashlib.sha256(key).digest()
+        with self._replay_states_lock:
+            replay_state = self._replay_states.get(key_id)
+            if replay_state is None:
+                replay_state = _ReplayState(max_clock_skew_seconds, max_nonces)
+                self._replay_states[key_id] = replay_state
+            elif (
+                replay_state.max_clock_skew_seconds != max_clock_skew_seconds
+                or replay_state.max_nonces != max_nonces
+            ):
+                raise ValueError(
+                    "Bridge authenticators using the same secret must use the same replay limits."
+                )
+
         self._secret = key
         self._max_clock_skew = max_clock_skew_seconds
         self._max_nonces = max_nonces
         self._clock = clock
-        self._seen_nonces: dict[str, int] = {}
-        self._highest_wall_time_seen: int | None = None
-        self._lock = Lock()
+        self._replay_state = replay_state
 
     def create_request(
         self,
@@ -170,24 +195,25 @@ class BridgeAuthenticator:
             raise BridgeAuthenticationError("Bridge signature verification failed.")
 
         now = int(self._clock())
-        with self._lock:
-            if self._highest_wall_time_seen is not None and now < self._highest_wall_time_seen:
+        replay_state = self._replay_state
+        with replay_state.lock:
+            if replay_state.highest_wall_time_seen is not None and now < replay_state.highest_wall_time_seen:
                 raise BridgeAuthenticationError(
                     "Bridge system clock moved backwards; replay checks are paused until it catches up."
                 )
-            self._highest_wall_time_seen = now
+            replay_state.highest_wall_time_seen = now
 
             if abs(now - request.timestamp) > self._max_clock_skew:
                 raise BridgeAuthenticationError("Bridge request is outside the allowed time window.")
 
             expires_at = request.timestamp + self._max_clock_skew
-            expired = [value for value, expiry in self._seen_nonces.items() if expiry < now]
+            expired = [value for value, expiry in replay_state.seen_nonces.items() if expiry < now]
             for value in expired:
-                self._seen_nonces.pop(value, None)
+                replay_state.seen_nonces.pop(value, None)
 
-            if request.nonce in self._seen_nonces:
+            if request.nonce in replay_state.seen_nonces:
                 raise BridgeAuthenticationError("Bridge request nonce has already been used.")
-            if len(self._seen_nonces) >= self._max_nonces:
+            if len(replay_state.seen_nonces) >= self._max_nonces:
                 raise BridgeAuthenticationError("Bridge replay-protection capacity is full.")
 
-            self._seen_nonces[request.nonce] = expires_at
+            replay_state.seen_nonces[request.nonce] = expires_at
