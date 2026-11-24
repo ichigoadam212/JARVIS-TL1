@@ -65,6 +65,31 @@ def test_stale_request_is_rejected():
         receiver.verify(request)
 
 
+def test_clock_rollback_cannot_reenable_an_expired_nonce():
+    clock_value = [NOW]
+    clock = lambda: clock_value[0]
+    sender = BridgeAuthenticator(SECRET, clock=clock)
+    receiver = BridgeAuthenticator(SECRET, clock=clock)
+
+    first = sender.create_request(BridgeAction.STATUS_READ)
+    receiver.verify(first)
+
+    # Advancing beyond the first request's expiry removes its nonce from the
+    # bounded cache. A subsequent clock rollback must not make it acceptable.
+    clock_value[0] = NOW + 31
+    forward = sender.create_request(BridgeAction.CAPABILITIES_READ)
+    receiver.verify(forward)
+
+    clock_value[0] = NOW + 1
+    with pytest.raises(BridgeAuthenticationError, match="clock moved backwards"):
+        receiver.verify(first)
+
+    # Verification can resume once the wall clock reaches its previous high-water mark.
+    clock_value[0] = NOW + 31
+    recovered = sender.create_request(BridgeAction.STATUS_READ)
+    assert receiver.verify(recovered) is None
+
+
 def test_future_request_outside_clock_window_is_rejected():
     sender = make_authenticator()
     receiver = make_authenticator()
