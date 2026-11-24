@@ -8,6 +8,7 @@ The module is intentionally narrow:
 - HMAC-SHA256 signed request envelopes.
 - Protocol version 1 and a short timestamp acceptance window.
 - A bounded, process-local nonce cache that rejects replayed requests and fails closed when full.
+- A nondecreasing wall-clock high-water check; a backward clock adjustment makes verification fail closed until the clock catches up, so expired nonces cannot become fresh again after cache cleanup.
 - Only two read-only actions: `status.read` and `capabilities.read`.
 - Empty payloads only. No command text, process controls, message sending, or arbitrary tool execution.
 
