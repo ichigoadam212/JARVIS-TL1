@@ -20,6 +20,8 @@ from typing import Any
 
 PROTOCOL_VERSION = 1
 MAX_ENVELOPE_BYTES = 4096
+MAX_REPLAY_STATES = 16
+MAX_NONCES_PER_KEY = 4096
 _REQUEST_ID_RE = re.compile(r"^[A-Za-z0-9_-]{8,128}$")
 _NONCE_RE = re.compile(r"^[A-Za-z0-9_-]{22,128}$")
 _SIGNATURE_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -130,13 +132,17 @@ class BridgeAuthenticator:
             raise ValueError("Bridge secret must contain at least 32 bytes.")
         if type(max_clock_skew_seconds) is not int or max_clock_skew_seconds < 1:
             raise ValueError("max_clock_skew_seconds must be a positive integer.")
-        if type(max_nonces) is not int or max_nonces < 1:
-            raise ValueError("max_nonces must be a positive integer.")
+        if type(max_nonces) is not int or not 1 <= max_nonces <= MAX_NONCES_PER_KEY:
+            raise ValueError(f"max_nonces must be between 1 and {MAX_NONCES_PER_KEY}.")
 
         key_id = hashlib.sha256(key).digest()
         with self._replay_states_lock:
             replay_state = self._replay_states.get(key_id)
             if replay_state is None:
+                if len(self._replay_states) >= MAX_REPLAY_STATES:
+                    raise ValueError(
+                        "Bridge replay-state registry is full; refusing a new key to preserve replay protection."
+                    )
                 replay_state = _ReplayState(max_clock_skew_seconds, max_nonces)
                 self._replay_states[key_id] = replay_state
             elif (
