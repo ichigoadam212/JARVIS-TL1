@@ -12,9 +12,10 @@ Implemented on the development branch:
 - Allowlisted Command Engine (`help`, `status`, `time`, `exit` only); the `time` command reports local time through an injectable timezone-aware clock.
 - Guardian health checks for registered in-process components.
 - A bounded restart-policy primitive ported from verified Guardian V3 history (five attempts, exponential backoff capped at 60 seconds); policy only, not an OS process restarter.
-- Automated tests cover core behavior, restart-policy limits, and secret-owner authorization. Require a successful GitHub Actions run for the exact latest branch head before accepting further changes.
+- Android Bridge protocol foundation on the dedicated work branch: HMAC-SHA256 signed, read-only `status.read` and `capabilities.read` envelopes with timestamp checks and bounded process-local replay protection. No socket listener or Android adapter is included.
+- Automated tests cover core behavior, restart-policy limits, secret-owner authorization, and bridge protocol validation. Core CI run #71 passed 23 tests; Bridge protocol CI run #58 passed on its original head. A fresh run is required for this synchronized branch.
 
-Not implemented yet: Android Bridge, external process supervision, AI provider integration, persistent memory, owner authentication, dashboard, or background service.
+Not implemented yet: Android-side Kotlin adapter/transport, session handshake and secure secret provisioning, external process supervision, AI provider integration, persistent memory, trusted owner authentication, dashboard, or background service.
 
 ## Quick start
 
@@ -30,6 +31,7 @@ python -m jarvis
 - `tests/` — automated tests.
 - `config/settings.example.toml` — non-secret example settings.
 - `docs/ARCHITECTURE.md` — architecture and planned modules.
+- `docs/ANDROID_BRIDGE_PROTOCOL.md` — protocol v1 scope and trust boundary.
 - `.devcontainer/` — Debian development container.
 
 ## Security baseline
