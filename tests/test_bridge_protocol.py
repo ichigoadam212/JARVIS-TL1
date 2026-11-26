@@ -3,6 +3,8 @@ from dataclasses import replace
 import pytest
 
 from jarvis.bridge.protocol import (
+    MAX_NONCES_PER_KEY,
+    MAX_REPLAY_STATES,
     BridgeAction,
     BridgeAuthenticationError,
     BridgeAuthenticator,
@@ -173,3 +175,31 @@ def test_malformed_request_id_and_nonce_are_rejected():
 
     with pytest.raises(BridgeProtocolError, match="nonce"):
         authenticator.verify(replace(request, nonce="bad"))
+
+
+
+def test_replay_state_registry_is_bounded_and_fails_closed_without_evicting_existing_keys():
+    secrets = [
+        f"bridge-registry-secret-{index:04d}".ljust(32, "x")
+        for index in range(MAX_REPLAY_STATES)
+    ]
+    receivers = [
+        BridgeAuthenticator(secret, clock=lambda: NOW)
+        for secret in secrets
+    ]
+    sender = BridgeAuthenticator(secrets[0], clock=lambda: NOW)
+    request = sender.create_request(BridgeAction.STATUS_READ)
+
+    receivers[0].verify(request)
+
+    with pytest.raises(ValueError, match="registry is full"):
+        BridgeAuthenticator("bridge-registry-secret-overflow".ljust(32, "x"))
+
+    with pytest.raises(BridgeAuthenticationError, match="already been used"):
+        receivers[0].verify(request)
+    assert len(BridgeAuthenticator._replay_states) == MAX_REPLAY_STATES
+
+
+def test_per_key_nonce_capacity_has_a_hard_upper_bound():
+    with pytest.raises(ValueError, match="max_nonces"):
+        make_authenticator(max_nonces=MAX_NONCES_PER_KEY + 1)
